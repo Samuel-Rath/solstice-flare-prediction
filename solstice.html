@@ -1,35 +1,116 @@
-import streamlit as st
-from datetime import date
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flare Airdrop Prediction Simulator</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; }
+        input { margin-bottom: 10px; padding: 5px; }
+        button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #results { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Flare Airdrop Prediction Simulator</h1>
+    <form id="predictionForm">
+        <label for="flares_daily">Flares generated daily:</label>
+        <input type="number" id="flares_daily" step="0.1" min="0" required>
 
-st.title("Flare Airdrop Prediction Simulator")
+        <label for="total_tvl">Total TVL:</label>
+        <input type="number" id="total_tvl" step="0.1" min="0" required>
 
-# Input fields
-flares_daily = st.number_input("Flares generated daily", min_value=0.0, step=0.1)
-total_tvl = st.number_input("Total TVL", min_value=0.0, step=0.1)
-total_flare_supply = st.number_input("Total Flare Supply", min_value=0.0, step=0.1)
-tge_date = st.date_input("TGE Date")
-percent_airdropped = st.number_input("% of supply airdropped", min_value=0.0, max_value=100.0, step=0.1)
+        <label for="total_flare_supply">Total Flare Supply:</label>
+        <input type="number" id="total_flare_supply" step="0.1" min="0" required>
 
-if st.button("Submit"):
-    current_date = date.today()
-    days_to_tge = (tge_date - current_date).days
-    
-    if days_to_tge < 0:
-        st.error("TGE date must be in the future.")
-    elif days_to_tge == 0:
-        st.warning("TGE is today; no flares will be earned.")
-        total_flares_earned = 0
-    else:
-        total_flares_earned = flares_daily * days_to_tge
-    
-    if total_flare_supply == 0:
-        st.error("Total Flare Supply cannot be zero.")
-    else:
-        price_per_flare = (total_tvl * (percent_airdropped / 100)) / total_flare_supply
-        approx_value = price_per_flare * total_flares_earned
-        
-        st.subheader("Results")
-        st.write(f"Days to TGE: {days_to_tge}")
-        st.write(f"Total Flares Earned: {total_flares_earned:.2f}")
-        st.write(f"Price per Flare: ${price_per_flare:.4f}")
-        st.write(f"Approximate Airdrop Value: ${approx_value:.2f}")
+        <label for="tge_date">TGE Date:</label>
+        <input type="date" id="tge_date" required>
+
+        <label for="percent_airdropped">% of supply airdropped:</label>
+        <input type="number" id="percent_airdropped" step="0.1" min="0" max="100" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="results" style="display: none;">
+        <h2>Results</h2>
+        <p id="days_to_tge"></p>
+        <p id="total_flares_earned"></p>
+        <p id="price_per_flare"></p>
+        <p id="approx_value"></p>
+    </div>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <script>
+        const form = document.getElementById('predictionForm');
+        const results = document.getElementById('results');
+        const errorDiv = document.getElementById('error');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            errorDiv.style.display = 'none';
+            results.style.display = 'none';
+
+            const flaresDaily = parseFloat(document.getElementById('flares_daily').value);
+            const totalTvl = parseFloat(document.getElementById('total_tvl').value);
+            const totalFlareSupply = parseFloat(document.getElementById('total_flare_supply').value);
+            const tgeDateStr = document.getElementById('tge_date').value;
+            const percentAirdropped = parseFloat(document.getElementById('percent_airdropped').value);
+
+            if (isNaN(flaresDaily) || isNaN(totalTvl) || isNaN(totalFlareSupply) || isNaN(percentAirdropped) || !tgeDateStr) {
+                showError('Please fill in all fields correctly.');
+                return;
+            }
+
+            const currentDate = new Date();
+            const tgeDate = new Date(tgeDateStr);
+            const timeDiff = tgeDate - currentDate;
+            const daysToTge = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+            if (daysToTge < 0) {
+                showError('TGE date must be in the future.');
+                return;
+            }
+
+            if (totalFlareSupply === 0) {
+                showError('Total Flare Supply cannot be zero.');
+                return;
+            }
+
+            let totalFlaresEarned = 0;
+            if (daysToTge > 0) {
+                totalFlaresEarned = flaresDaily * daysToTge;
+            } else {
+                showWarning('TGE is today; no flares will be earned.');
+            }
+
+            const pricePerFlare = (totalTvl * (percentAirdropped / 100)) / totalFlareSupply;
+            const approxValue = pricePerFlare * totalFlaresEarned;
+
+            document.getElementById('days_to_tge').textContent = `Days to TGE: ${daysToTge}`;
+            document.getElementById('total_flares_earned').textContent = `Total Flares Earned: ${totalFlaresEarned.toFixed(2)}`;
+            document.getElementById('price_per_flare').textContent = `Price per Flare: $${pricePerFlare.toFixed(4)}`;
+            document.getElementById('approx_value').textContent = `Approximate Airdrop Value: $${approxValue.toFixed(2)}`;
+
+            results.style.display = 'block';
+        });
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function showWarning(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('error');
+            errorDiv.style.color = 'orange';
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
