@@ -1,116 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flare Airdrop Prediction Simulator</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        form { display: flex; flex-direction: column; }
-        label { margin-top: 10px; }
-        input { margin-bottom: 10px; padding: 5px; }
-        button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        #results { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        .error { color: red; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flare Airdrop Predictor</title>
+<style>
+  :root{
+    --bg1:#ff8a00;
+    --bg2:#ffd1ff;
+    --accent:#5b2ea6;
+    --muted:#6b6b6b;
+    --card:rgba(255,255,255,0.07);
+    --glass:rgba(255,255,255,0.06);
+    --radius:14px;
+    --mono:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html,body{height:100%;margin:0;font-family:var(--mono);color:#0b0b0b}
+  body{background:linear-gradient(120deg,var(--bg1) 0%,#f6a0b9 35%,var(--bg2) 100%);display:flex;align-items:center;justify-content:center;padding:40px 20px}
+  .container{width:100%;max-width:980px;background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.85));border-radius:20px;box-shadow:0 10px 40px rgba(11,11,11,0.18);overflow:hidden;display:grid;grid-template-columns:1fr 420px}
+  .left{padding:48px 44px}
+  .right{background:linear-gradient(180deg,rgba(91,46,166,0.95),rgba(91,46,166,0.85));color:white;padding:36px;display:flex;flex-direction:column;gap:16px;justify-content:center}
+  h1{margin:0 0 8px;font-size:32px;letter-spacing:-0.6px}
+  p.lead{color:var(--muted);margin:0 0 20px}
+  form{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  label{font-size:13px;color:#222;margin-bottom:8px;display:block}
+  input[type=text],input[type=date]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(11,11,11,0.06);font-size:14px}
+  .full{grid-column:1/-1}
+  button{background:linear-gradient(90deg,#ff7b00,#ff4db1);border:none;color:white;padding:12px 16px;border-radius:10px;font-weight:600;cursor:pointer}
+  .result{background:var(--card);padding:16px;border-radius:12px;margin-top:12px}
+  .small{font-size:13px}
+  dt{font-weight:700}
+  dd{margin:0 0 12px}
+  ul{margin:0;padding-left:18px}
+  @media(max-width:920px){.container{grid-template-columns:1fr}.right{order:-1}form{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-    <h1>Flare Airdrop Prediction Simulator</h1>
-    <form id="predictionForm">
-        <label for="flares_daily">Flares generated daily:</label>
-        <input type="number" id="flares_daily" step="0.1" min="0" required>
-
-        <label for="total_tvl">Total TVL:</label>
-        <input type="number" id="total_tvl" step="0.1" min="0" required>
-
-        <label for="total_flare_supply">Total Flare Supply:</label>
-        <input type="number" id="total_flare_supply" step="0.1" min="0" required>
-
-        <label for="tge_date">TGE Date:</label>
+<div class="container">
+  <div class="left">
+    <h1>Flare Airdrop Predictor</h1>
+    <p class="lead">Enter your metrics to simulate approximate airdrop value.</p>
+    <form id="predictorForm">
+      <div>
+        <label>Flares generated daily</label>
+        <input type="text" id="daily_flares" required>
+      </div>
+      <div>
+        <label>Current flare amount</label>
+        <input type="text" id="current_flares" required>
+      </div>
+      <div>
+        <label>Total TVL</label>
+        <input type="text" id="total_tvl" required>
+      </div>
+      <div>
+        <label>Total flare supply</label>
+        <input type="text" id="total_supply" required>
+      </div>
+      <div>
+        <label>TGE date</label>
         <input type="date" id="tge_date" required>
-
-        <label for="percent_airdropped">% of supply airdropped:</label>
-        <input type="number" id="percent_airdropped" step="0.1" min="0" max="100" required>
-
-        <button type="submit">Submit</button>
+      </div>
+      <div class="full">
+        <label>Percent of supply airdropped</label>
+        <input type="text" id="pct_airdrop" required>
+      </div>
+      <div class="full">
+        <button type="submit">Calculate estimate</button>
+      </div>
     </form>
-
-    <div id="results" style="display: none;">
-        <h2>Results</h2>
-        <p id="days_to_tge"></p>
-        <p id="total_flares_earned"></p>
-        <p id="price_per_flare"></p>
-        <p id="approx_value"></p>
-    </div>
-
-    <div id="error" class="error" style="display: none;"></div>
-
-    <script>
-        const form = document.getElementById('predictionForm');
-        const results = document.getElementById('results');
-        const errorDiv = document.getElementById('error');
-
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            errorDiv.style.display = 'none';
-            results.style.display = 'none';
-
-            const flaresDaily = parseFloat(document.getElementById('flares_daily').value);
-            const totalTvl = parseFloat(document.getElementById('total_tvl').value);
-            const totalFlareSupply = parseFloat(document.getElementById('total_flare_supply').value);
-            const tgeDateStr = document.getElementById('tge_date').value;
-            const percentAirdropped = parseFloat(document.getElementById('percent_airdropped').value);
-
-            if (isNaN(flaresDaily) || isNaN(totalTvl) || isNaN(totalFlareSupply) || isNaN(percentAirdropped) || !tgeDateStr) {
-                showError('Please fill in all fields correctly.');
-                return;
-            }
-
-            const currentDate = new Date();
-            const tgeDate = new Date(tgeDateStr);
-            const timeDiff = tgeDate - currentDate;
-            const daysToTge = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-            if (daysToTge < 0) {
-                showError('TGE date must be in the future.');
-                return;
-            }
-
-            if (totalFlareSupply === 0) {
-                showError('Total Flare Supply cannot be zero.');
-                return;
-            }
-
-            let totalFlaresEarned = 0;
-            if (daysToTge > 0) {
-                totalFlaresEarned = flaresDaily * daysToTge;
-            } else {
-                showWarning('TGE is today; no flares will be earned.');
-            }
-
-            const pricePerFlare = (totalTvl * (percentAirdropped / 100)) / totalFlareSupply;
-            const approxValue = pricePerFlare * totalFlaresEarned;
-
-            document.getElementById('days_to_tge').textContent = `Days to TGE: ${daysToTge}`;
-            document.getElementById('total_flares_earned').textContent = `Total Flares Earned: ${totalFlaresEarned.toFixed(2)}`;
-            document.getElementById('price_per_flare').textContent = `Price per Flare: $${pricePerFlare.toFixed(4)}`;
-            document.getElementById('approx_value').textContent = `Approximate Airdrop Value: $${approxValue.toFixed(2)}`;
-
-            results.style.display = 'block';
-        });
-
-        function showError(message) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showWarning(message) {
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('error');
-            errorDiv.style.color = 'orange';
-            errorDiv.style.display = 'block';
-        }
-    </script>
+    <div id="result" class="result" style="display:none"></div>
+  </div>
+  <div class="right">
+    <h2 style="margin:0 0 6px">Summary</h2>
+    <p class="small">This tool uses a simplified simulation model for approximate airdrop evaluation.</p>
+    <p class="small">Enter your daily flare production and project supply metrics for estimation.</p>
+    <ul class="small">
+      <li>Ensure your TGE date is correct</li>
+      <li>TVL and value use the same currency unit</li>
+      <li>Adjust the airdrop percent to test scenarios</li>
+    </ul>
+  </div>
+</div>
+<script>
+function formatWithCommas(value) {
+  let parts = value.toString().split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
+function parseFormattedNumber(str) {
+  return parseFloat(str.replace(/,/g, ''));
+}
+function formatQuantise(value, decimals) {
+  let floored = Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  let fixed = floored.toFixed(decimals);
+  return formatWithCommas(fixed);
+}
+// Add formatting to inputs
+const numberInputs = ['daily_flares', 'current_flares', 'total_tvl', 'total_supply', 'pct_airdrop'];
+numberInputs.forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('blur', function() {
+    const value = parseFormattedNumber(this.value);
+    if (!isNaN(value)) {
+      this.value = formatWithCommas(value.toString());
+    }
+  });
+  input.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9.,]/g, '');
+  });
+});
+document.getElementById('predictorForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const daily = parseFormattedNumber(document.getElementById('daily_flares').value);
+  const current = parseFormattedNumber(document.getElementById('current_flares').value);
+  const tvl = parseFormattedNumber(document.getElementById('total_tvl').value);
+  const supply = parseFormattedNumber(document.getElementById('total_supply').value);
+  const tge = new Date(document.getElementById('tge_date').value);
+  const pct = parseFormattedNumber(document.getElementById('pct_airdrop').value);
+  if (isNaN(daily) || isNaN(current) || isNaN(tvl) || isNaN(supply) || isNaN(pct) || isNaN(tge.getTime())) {
+    alert('Please fill in all fields correctly.');
+    return;
+  }
+  if (pct < 0 || pct > 100) {
+    alert('Percent of supply airdropped must be between 0 and 100.');
+    return;
+  }
+  if (supply <= 0) {
+    alert('Total flare supply must be greater than 0.');
+    return;
+  }
+  const today = new Date('2025-11-15');
+  const diff = Math.max(0, Math.floor((tge - today) / (1000 * 60 * 60 * 24)));
+  const accruedFlares = daily * diff;
+  const totalFlares = accruedFlares + current;
+  const airdropPool = tvl * (pct / 100);
+  const price = airdropPool / supply;
+  const value = price * totalFlares;
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').innerHTML = `
+    <dl>
+      <dt class='small'>Days until TGE</dt><dd>${formatWithCommas(diff.toString())}</dd>
+      <dt class='small'>Total flares earned</dt><dd>${formatQuantise(totalFlares, 2)}</dd>
+      <dt class='small'>Price per flare</dt><dd>$${formatQuantise(price, 8)}</dd>
+      <dt class='small'>Approximate airdrop value</dt><dd><strong>$${formatQuantise(value, 2)}</strong></dd>
+    </dl>
+    <p class='small'>Simulation only. Not financial advice.</p>
+  `;
+});
+</script>
 </body>
 </html>
