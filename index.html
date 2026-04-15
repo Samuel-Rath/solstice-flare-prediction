@@ -3,86 +3,339 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Solstice Airdrop Predictor</title>
+<title>Solstice Flares Base Allocation Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg1:#ff8a00;
-    --bg2:#ffd1ff;
-    --accent:#5b2ea6;
-    --muted:#6b6b6b;
-    --card:rgba(255,255,255,0.07);
-    --glass:rgba(255,255,255,0.06);
+    --orange:#ff8a00;
+    --pink:#f6a0b9;
+    --lavender:#ffd1ff;
+    --purple:#5b2ea6;
+    --purple-deep:#3d1b75;
+    --ink:#14121c;
+    --ink-soft:#4b4656;
+    --muted:#7a7583;
+    --surface:#ffffff;
+    --surface-2:#fbf7ff;
+    --border:rgba(20,18,28,0.08);
+    --border-strong:rgba(20,18,28,0.16);
+    --good-bg:#e8fbef;
+    --good-fg:#0a6b2c;
+    --good-border:#9ae6b4;
+    --bad-bg:#fdeaea;
+    --bad-fg:#8b1b1b;
+    --bad-border:#f5a3a3;
+    --radius-sm:10px;
     --radius:14px;
-    --mono:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    --radius-lg:20px;
+    --shadow-sm:0 1px 2px rgba(20,18,28,0.06);
+    --shadow-md:0 8px 24px rgba(91,46,166,0.12);
+    --shadow-lg:0 20px 60px rgba(20,18,28,0.18);
+    --ease:cubic-bezier(.2,.7,.2,1);
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    --display:'Space Grotesk',var(--sans);
   }
-  * { box-sizing: border-box; }
-  html,body{height:100%;margin:0;font-family:var(--mono);color:#0b0b0b}
-  body{background:linear-gradient(120deg,var(--bg1) 0%,#f6a0b9 35%,var(--bg2) 100%);display:flex;align-items:center;justify-content:center;padding:40px 20px}
-  .container{width:100%;max-width:980px;background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.85));border-radius:20px;box-shadow:0 10px 40px rgba(11,11,11,0.18);overflow:hidden;display:grid;grid-template-columns:1fr 420px}
-  .left{padding:48px 44px}
-  .right{background:linear-gradient(180deg,rgba(91,46,166,0.95),rgba(91,46,166,0.85));color:white;padding:36px;display:flex;flex-direction:column;gap:16px;justify-content:center}
-  h1{margin:0 0 8px;font-size:32px;letter-spacing:-0.6px}
-  p.lead{color:var(--muted);margin:0 0 20px}
-  form{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  label{font-size:13px;color:#222;margin-bottom:8px;display:block}
-  input[type=text],input[type=date]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(11,11,11,0.06);font-size:14px}
-  .full{grid-column:1/-1}
-  button{background:linear-gradient(90deg,#ff7b00,#ff4db1);border:none;color:white;padding:12px 16px;border-radius:10px;font-weight:600;cursor:pointer}
-  .result{background:var(--card);padding:16px;border-radius:12px;margin-top:12px}
-  .small{font-size:13px}
-  dt{font-weight:700}
-  dd{margin:0 0 12px}
-  ul{margin:0;padding-left:18px}
-  @media(max-width:920px){.container{grid-template-columns:1fr}.right{order:-1}form{grid-template-columns:1fr}}
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    min-height:100dvh;
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.5;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 10% -10%,rgba(255,138,0,0.55),transparent 60%),
+      radial-gradient(900px 500px at 110% 10%,rgba(255,209,255,0.7),transparent 60%),
+      linear-gradient(135deg,#ff8a00 0%,#f6a0b9 45%,#ffd1ff 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:clamp(16px,4vw,48px);
+  }
+  .container{
+    width:100%;
+    max-width:1000px;
+    background:linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.92));
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-lg);
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:1.2fr 0.85fr;
+  }
+  .left{padding:clamp(28px,4vw,48px)}
+  .right{
+    position:relative;
+    color:#fff;
+    padding:clamp(28px,4vw,40px);
+    background:
+      radial-gradient(600px 300px at 100% 0%,rgba(255,138,0,0.35),transparent 60%),
+      linear-gradient(160deg,var(--purple) 0%,var(--purple-deep) 100%);
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    justify-content:center;
+  }
+  .right::after{
+    content:"";
+    position:absolute;
+    inset:auto -40px -60px auto;
+    width:220px;height:220px;
+    background:radial-gradient(closest-side,rgba(255,209,255,0.35),transparent);
+    pointer-events:none;
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--display);
+    font-size:12px;font-weight:600;
+    letter-spacing:0.12em;text-transform:uppercase;
+    color:var(--purple);
+    background:rgba(91,46,166,0.08);
+    border:1px solid rgba(91,46,166,0.16);
+    padding:6px 10px;border-radius:999px;
+    margin-bottom:16px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:999px;background:var(--orange);box-shadow:0 0 0 3px rgba(255,138,0,0.2)}
+  h1{
+    font-family:var(--display);
+    font-size:clamp(26px,3.4vw,34px);
+    line-height:1.15;
+    letter-spacing:-0.02em;
+    margin:0 0 8px;
+    color:var(--ink);
+  }
+  p.lead{color:var(--ink-soft);margin:0 0 28px;max-width:52ch}
+  form{display:grid;grid-template-columns:1fr 1fr;gap:16px 16px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/-1}
+  label{
+    font-size:13px;font-weight:600;color:var(--ink);
+    display:flex;align-items:center;gap:6px;
+  }
+  .hint{font-size:12px;color:var(--muted);margin-top:2px}
+  .input{
+    position:relative;display:flex;align-items:center;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-sm);
+    transition:border-color 150ms var(--ease),box-shadow 150ms var(--ease),transform 150ms var(--ease);
+  }
+  .input:hover{border-color:var(--border-strong)}
+  .input:focus-within{
+    border-color:var(--purple);
+    box-shadow:0 0 0 4px rgba(91,46,166,0.15);
+  }
+  .input .affix{
+    font-size:14px;color:var(--muted);font-weight:500;
+    padding:0 10px 0 14px;white-space:nowrap;
+  }
+  .input .affix + input{padding-left:0}
+  .input .affix.right{padding:0 14px 0 10px}
+  .input input[type=text]{
+    flex:1;min-width:0;
+    width:100%;
+    padding:14px 14px;
+    border:0;background:transparent;outline:none;
+    font:inherit;font-size:15px;color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    min-height:48px;
+  }
+  .input input::placeholder{color:#b3aebd}
+  button{
+    appearance:none;-webkit-appearance:none;
+    font:inherit;font-weight:600;font-size:15px;
+    color:#fff;
+    background:linear-gradient(90deg,#ff7b00 0%,#ff4db1 100%);
+    border:0;border-radius:var(--radius-sm);
+    padding:16px 20px;
+    min-height:48px;
+    cursor:pointer;
+    box-shadow:0 8px 20px rgba(255,77,177,0.28),inset 0 1px 0 rgba(255,255,255,0.25);
+    transition:transform 150ms var(--ease),box-shadow 150ms var(--ease),filter 150ms var(--ease);
+  }
+  button:hover{filter:brightness(1.03)}
+  button:active{transform:translateY(1px);box-shadow:0 4px 14px rgba(255,77,177,0.28)}
+  button:focus-visible{outline:3px solid rgba(91,46,166,0.45);outline-offset:3px}
+  .result{
+    margin-top:24px;
+    padding:22px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    animation:rise 260ms var(--ease) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .result-hero{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+  .result-hero .hero-label{
+    font-size:12px;font-weight:600;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .result-hero .hero-value{
+    font-family:var(--display);
+    font-size:clamp(34px,5vw,44px);
+    font-weight:700;letter-spacing:-0.02em;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .stats{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    margin:14px 0 16px;
+  }
+  .stat{
+    padding:12px 14px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+  }
+  .stat dt{
+    font-size:11px;font-weight:600;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:4px;
+  }
+  .stat dd{
+    margin:0;font-size:16px;font-weight:600;color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .share-bar{
+    height:8px;border-radius:999px;
+    background:rgba(91,46,166,0.08);
+    overflow:hidden;margin:6px 0 16px;
+  }
+  .share-bar > span{
+    display:block;height:100%;
+    background:linear-gradient(90deg,var(--orange),#ff4db1,var(--purple));
+    border-radius:999px;
+    transform-origin:left;
+    animation:grow 500ms var(--ease) both;
+  }
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .verdict{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 14px;border-radius:var(--radius-sm);
+    font-weight:600;font-size:14px;
+    border:1px solid transparent;
+  }
+  .verdict .icon{
+    width:20px;height:20px;flex:0 0 20px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:999px;font-size:13px;font-weight:700;
+  }
+  .verdict.good{background:var(--good-bg);color:var(--good-fg);border-color:var(--good-border)}
+  .verdict.good .icon{background:var(--good-fg);color:#fff}
+  .verdict.bad{background:var(--bad-bg);color:var(--bad-fg);border-color:var(--bad-border)}
+  .verdict.bad .icon{background:var(--bad-fg);color:#fff}
+  .disclaimer{font-size:12px;color:var(--muted);margin:14px 0 0}
+  .right h2{
+    font-family:var(--display);
+    font-size:18px;font-weight:600;letter-spacing:-0.01em;
+    margin:0;
+  }
+  .right p{font-size:14px;color:rgba(255,255,255,0.85);margin:0;line-height:1.55}
+  .formula{
+    font-family:'SFMono-Regular',Menlo,Consolas,monospace;
+    font-size:13px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;color:#fff;
+  }
+  .tips{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+  .tips li{
+    position:relative;padding-left:22px;
+    font-size:13px;color:rgba(255,255,255,0.88);line-height:1.5;
+  }
+  .tips li::before{
+    content:"";position:absolute;left:0;top:7px;
+    width:8px;height:8px;border-radius:999px;
+    background:linear-gradient(135deg,var(--orange),#ff4db1);
+    box-shadow:0 0 0 3px rgba(255,138,0,0.22);
+  }
+  @media (max-width:860px){
+    .container{grid-template-columns:1fr}
+    .right{order:-1;padding:24px}
+    form{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="left">
-    <h1>Solstice Airdrop Predictor</h1>
-    <p class="lead">Enter your metrics to simulate approximate airdrop value.</p>
-    <form id="predictorForm">
-      <div>
-        <label>Flares generated daily</label>
-        <input type="text" id="daily_flares" required>
+<main class="container" aria-labelledby="title">
+  <section class="left">
+    <span class="eyebrow"><span class="dot" aria-hidden="true"></span>Solstice Flares</span>
+    <h1 id="title">Base Allocation Checker</h1>
+    <p class="lead">See whether your flare allocation is worth the $7 registration fee everyone's complaining about.</p>
+
+    <form id="predictorForm" novalidate>
+      <div class="field">
+        <label for="total_flares">Total flares</label>
+        <div class="input">
+          <input type="text" inputmode="decimal" id="total_flares" value="410,000,000,000" required aria-describedby="total_flares_hint">
+        </div>
+        <div class="hint" id="total_flares_hint">Protocol-wide supply (default 410B)</div>
       </div>
-      <div>
-        <label>Current flare amount</label>
-        <input type="text" id="current_flares" required>
+
+      <div class="field">
+        <label for="user_flares">Your flares</label>
+        <div class="input">
+          <input type="text" inputmode="decimal" id="user_flares" placeholder="e.g. 1,250,000" required aria-describedby="user_flares_hint">
+        </div>
+        <div class="hint" id="user_flares_hint">Flares accrued to your wallet</div>
       </div>
-      <div>
-        <label>Total TVL</label>
-        <input type="text" id="total_tvl" required>
+
+      <div class="field">
+        <label for="slx_allocation">Airdrop allocation</label>
+        <div class="input">
+          <input type="text" inputmode="decimal" id="slx_allocation" value="80,000,000" required aria-describedby="slx_allocation_hint">
+          <span class="affix right">SLX</span>
+        </div>
+        <div class="hint" id="slx_allocation_hint">Tokens reserved for the airdrop</div>
       </div>
-      <div>
-        <label>Total flare supply</label>
-        <input type="text" id="total_supply" required>
+
+      <div class="field">
+        <label for="token_price">Token price</label>
+        <div class="input">
+          <span class="affix">$</span>
+          <input type="text" inputmode="decimal" id="token_price" value="0.10" required aria-describedby="token_price_hint">
+        </div>
+        <div class="hint" id="token_price_hint">$0.10 = 100M FDV (at 1B supply)</div>
       </div>
-      <div>
-        <label>TGE date</label>
-        <input type="date" id="tge_date" required>
+
+      <div class="field full">
+        <label for="reg_fee">Registration fee</label>
+        <div class="input">
+          <span class="affix">$</span>
+          <input type="text" inputmode="decimal" id="reg_fee" value="7" required aria-describedby="reg_fee_hint">
+        </div>
+        <div class="hint" id="reg_fee_hint">Upfront cost to register for the airdrop</div>
       </div>
-      <div class="full">
-        <label>Percent of supply airdropped</label>
-        <input type="text" id="pct_airdrop" required>
-      </div>
-      <div class="full">
-        <button type="submit">Calculate estimate</button>
+
+      <div class="field full">
+        <button type="submit">Calculate my allocation</button>
       </div>
     </form>
-    <div id="result" class="result" style="display:none"></div>
-  </div>
-  <div class="right">
-    <h2 style="margin:0 0 6px">Summary</h2>
-    <p class="small">This tool uses a simplified simulation model for approximate airdrop evaluation.</p>
-    <p class="small">Enter your daily flare production and project supply metrics for estimation.</p>
-    <ul class="small">
-      <li>Ensure your TGE date is correct</li>
-      <li>TVL and value use the same currency unit</li>
-      <li>Adjust the airdrop percent to test scenarios</li>
+
+    <div id="result" class="result" style="display:none" aria-live="polite"></div>
+  </section>
+
+  <aside class="right" aria-label="How it works">
+    <h2>How it works</h2>
+    <p>Your share of the airdrop pool equals your flares divided by total flares, multiplied by the SLX allocation and token price.</p>
+    <div class="formula">(your flares / total) × SLX × price</div>
+    <ul class="tips">
+      <li>$0.10 token price implies a 100M FDV.</li>
+      <li>Change the price to model different FDVs.</li>
+      <li>Verdict compares your payout to the fee.</li>
     </ul>
-  </div>
-</div>
+  </aside>
+</main>
+
 <script>
 function formatWithCommas(value) {
   let parts = value.toString().split('.');
@@ -90,22 +343,18 @@ function formatWithCommas(value) {
   return parts.join('.');
 }
 function parseFormattedNumber(str) {
-  return parseFloat(str.replace(/,/g, ''));
+  return parseFloat((str || '').replace(/,/g, ''));
 }
 function formatQuantise(value, decimals) {
   let floored = Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
-  let fixed = floored.toFixed(decimals);
-  return formatWithCommas(fixed);
+  return formatWithCommas(floored.toFixed(decimals));
 }
-// Add formatting to inputs
-const numberInputs = ['daily_flares', 'current_flares', 'total_tvl', 'total_supply', 'pct_airdrop'];
+const numberInputs = ['total_flares', 'user_flares', 'slx_allocation', 'token_price', 'reg_fee'];
 numberInputs.forEach(id => {
   const input = document.getElementById(id);
   input.addEventListener('blur', function() {
     const value = parseFormattedNumber(this.value);
-    if (!isNaN(value)) {
-      this.value = formatWithCommas(value.toString());
-    }
+    if (!isNaN(value)) this.value = formatWithCommas(value.toString());
   });
   input.addEventListener('input', function() {
     this.value = this.value.replace(/[^0-9.,]/g, '');
@@ -113,40 +362,48 @@ numberInputs.forEach(id => {
 });
 document.getElementById('predictorForm').addEventListener('submit', function(e){
   e.preventDefault();
-  const daily = parseFormattedNumber(document.getElementById('daily_flares').value);
-  const current = parseFormattedNumber(document.getElementById('current_flares').value);
-  const tvl = parseFormattedNumber(document.getElementById('total_tvl').value);
-  const supply = parseFormattedNumber(document.getElementById('total_supply').value);
-  const tge = new Date(document.getElementById('tge_date').value);
-  const pct = parseFormattedNumber(document.getElementById('pct_airdrop').value);
-  if (isNaN(daily) || isNaN(current) || isNaN(tvl) || isNaN(supply) || isNaN(pct) || isNaN(tge.getTime())) {
+  const totalFlares = parseFormattedNumber(document.getElementById('total_flares').value);
+  const userFlares  = parseFormattedNumber(document.getElementById('user_flares').value);
+  const slx         = parseFormattedNumber(document.getElementById('slx_allocation').value);
+  const price       = parseFormattedNumber(document.getElementById('token_price').value);
+  const fee         = parseFormattedNumber(document.getElementById('reg_fee').value);
+  if ([totalFlares, userFlares, slx, price, fee].some(isNaN)) {
     alert('Please fill in all fields correctly.');
     return;
   }
-  if (pct < 0 || pct > 100) {
-    alert('Percent of supply airdropped must be between 0 and 100.');
-    return;
-  }
-  if (supply <= 0) {
-    alert('Total flare supply must be greater than 0.');
-    return;
-  }
-  const today = new Date('2025-11-15');
-  const diff = Math.max(0, Math.floor((tge - today) / (1000 * 60 * 60 * 24)));
-  const accruedFlares = daily * diff;
-  const totalFlares = accruedFlares + current;
-  const airdropPool = tvl * (pct / 100);
-  const price = airdropPool / supply;
-  const value = price * totalFlares;
-  document.getElementById('result').style.display = 'block';
-  document.getElementById('result').innerHTML = `
-    <dl>
-      <dt class='small'>Days until TGE</dt><dd>${formatWithCommas(diff.toString())}</dd>
-      <dt class='small'>Total flares earned</dt><dd>${formatQuantise(totalFlares, 2)}</dd>
-      <dt class='small'>Price per flare</dt><dd>$${formatQuantise(price, 8)}</dd>
-      <dt class='small'>Approximate airdrop value</dt><dd><strong>$${formatQuantise(value, 2)}</strong></dd>
+  if (totalFlares <= 0) { alert('Total flares must be greater than 0.'); return; }
+
+  const share = userFlares / totalFlares;
+  const slxReceived = share * slx;
+  const value = slxReceived * price;
+  const profit = value - fee;
+  const sharePct = share * 100;
+  const barWidth = Math.max(0, Math.min(100, sharePct * 20));
+
+  const good = profit >= 0;
+  const verdictClass = good ? 'good' : 'bad';
+  const verdictIcon = good ? '&#10003;' : '&#10007;';
+  const verdictText = good
+    ? `Worth it — net +$${formatQuantise(profit, 2)} after the $${formatQuantise(fee, 2)} fee`
+    : `Not worth it — net −$${formatQuantise(Math.abs(profit), 2)} after the $${formatQuantise(fee, 2)} fee`;
+
+  const resultEl = document.getElementById('result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `
+    <div class="result-hero">
+      <span class="hero-label">Allocation value</span>
+      <span class="hero-value">$${formatQuantise(value, 2)}</span>
+    </div>
+    <div class="share-bar" aria-hidden="true"><span style="width:${barWidth}%"></span></div>
+    <dl class="stats">
+      <div class="stat"><dt>Your share</dt><dd>${formatQuantise(sharePct, 6)}%</dd></div>
+      <div class="stat"><dt>SLX received</dt><dd>${formatQuantise(slxReceived, 4)}</dd></div>
     </dl>
-    <p class='small'>Simulation only. Not financial advice.</p>
+    <div class="verdict ${verdictClass}" role="status">
+      <span class="icon" aria-hidden="true">${verdictIcon}</span>
+      <span>${verdictText}</span>
+    </div>
+    <p class="disclaimer">Simulation only. Not financial advice.</p>
   `;
 });
 </script>
