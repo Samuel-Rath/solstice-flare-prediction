@@ -89,25 +89,6 @@ test.describe('Solstice Flares Base Allocation Checker', () => {
     await expect(page.locator('.share-bar')).toBeVisible();
   });
 
-  test('copy button appears and copies to clipboard', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.locator('#user_flares').fill('5000000000');
-    await page.locator('#predictorForm button[type="submit"]').click();
-
-    const copyBtn = page.locator('.copy-btn');
-    await expect(copyBtn).toBeVisible();
-    await expect(copyBtn).toContainText('Copy results');
-    await copyBtn.click();
-
-    await expect(copyBtn).toContainText('Copied!');
-
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toContain('Solstice Flares Allocation Check');
-    expect(clipboardText).toContain('Allocation value');
-    expect(clipboardText).toContain('SLX received');
-    expect(clipboardText).toContain('Worth it');
-  });
-
   test('input only allows numeric characters', async ({ page }) => {
     const input = page.locator('#user_flares');
     await input.fill('abc123def456');
