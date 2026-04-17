@@ -230,6 +230,32 @@
   .verdict.bad .icon{background:var(--bad-fg);color:#fff}
   .verdict.even{background:#fff6e6;color:#7a4a00;border-color:#f5d38a}
   .verdict.even .icon{background:#7a4a00;color:#fff}
+  .airdrop-pct{
+    font-size:13px;color:var(--ink-soft);
+    margin:0 0 14px;
+    padding:10px 14px;
+    background:rgba(91,46,166,0.05);
+    border:1px solid rgba(91,46,166,0.1);
+    border-radius:var(--radius-sm);
+  }
+  .airdrop-pct strong{color:var(--purple);font-weight:700}
+  .copy-btn{
+    appearance:none;-webkit-appearance:none;
+    display:inline-flex;align-items:center;gap:8px;
+    font:inherit;font-size:13px;font-weight:600;
+    color:var(--purple);
+    background:rgba(91,46,166,0.06);
+    border:1px solid rgba(91,46,166,0.18);
+    border-radius:var(--radius-sm);
+    padding:10px 16px;
+    cursor:pointer;
+    margin-top:14px;
+    transition:background 150ms var(--ease);
+  }
+  .copy-btn:hover{background:rgba(91,46,166,0.12)}
+  .copy-btn:focus-visible{outline:3px solid rgba(91,46,166,0.45);outline-offset:3px}
+  .copy-btn svg{width:16px;height:16px;flex:0 0 16px}
+  .copy-btn.copied{color:var(--good-fg);border-color:var(--good-border);background:var(--good-bg)}
   .disclaimer{font-size:12px;color:var(--ink-soft);margin:14px 0 0}
   .right h2{
     font-family:var(--display);
@@ -392,6 +418,9 @@ document.getElementById('predictorForm').addEventListener('submit', function(e){
       ? `Worth it, you can make $${formatQuantise(profit, 2)} profit`
       : `Not worth it, you can lose $${formatQuantise(Math.abs(profit), 2)}`;
 
+  const totalSupply = 1000000000;
+  const airdropPct = (slx / totalSupply) * 100;
+
   const resultEl = document.getElementById('result');
   resultEl.style.display = 'block';
   resultEl.innerHTML = `
@@ -400,6 +429,7 @@ document.getElementById('predictorForm').addEventListener('submit', function(e){
       <span class="hero-value">$${formatQuantise(value, 2)}</span>
     </div>
     <div class="share-bar" aria-hidden="true"><span style="width:${barWidth}%"></span></div>
+    <p class="airdrop-pct">The ${formatQuantise(slx, 0)} SLX airdrop is <strong>${formatQuantise(airdropPct, 1)}%</strong> of the 1B total token supply.</p>
     <dl class="stats">
       <div class="stat"><dt>Your share</dt><dd>${formatQuantise(sharePct, 6)}%</dd></div>
       <div class="stat"><dt>SLX received</dt><dd>${formatQuantise(slxReceived, 4)}</dd></div>
@@ -408,9 +438,49 @@ document.getElementById('predictorForm').addEventListener('submit', function(e){
       <span class="icon" aria-hidden="true">${verdictIcon}</span>
       <span>${verdictText}</span>
     </div>
+    <button type="button" class="copy-btn" onclick="copyResults()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5"/></svg>
+      Copy results
+    </button>
     <p class="disclaimer">Simulation only. Not financial advice.</p>
   `;
+
+  window._lastResult = {
+    value: formatQuantise(value, 2),
+    sharePct: formatQuantise(sharePct, 6),
+    slxReceived: formatQuantise(slxReceived, 4),
+    airdropPct: formatQuantise(airdropPct, 1),
+    slxTotal: formatQuantise(slx, 0),
+    verdictText: verdictText.replace(/&#10003;|&#10007;/g, ''),
+    fee: formatQuantise(fee, 2),
+    price: formatQuantise(price, 2)
+  };
 });
+
+function copyResults() {
+  const r = window._lastResult;
+  if (!r) return;
+  const text = [
+    'Solstice Flares Allocation Check',
+    '',
+    'Allocation value: $' + r.value,
+    'My share: ' + r.sharePct + '%',
+    'SLX received: ' + r.slxReceived,
+    'Airdrop: ' + r.slxTotal + ' SLX (' + r.airdropPct + '% of supply)',
+    'Token price: $' + r.price,
+    '',
+    r.verdictText,
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    const btn = document.querySelector('.copy-btn');
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg> Copied!';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5"/></svg> Copy results';
+    }, 2000);
+  });
+}
 </script>
 </body>
 </html>

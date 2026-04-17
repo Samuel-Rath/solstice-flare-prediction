@@ -1,0 +1,26 @@
+{
+  "name": "solstice-flare-prediction",
+  "version": "1.0.0",
+  "main": "playwright.config.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Samuel-Rath/solstice-flare-prediction.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Samuel-Rath/solstice-flare-prediction/issues"
+  },
+  "homepage": "https://github.com/Samuel-Rath/solstice-flare-prediction#readme",
+  "description": "",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
